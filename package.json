@@ -1,7 +1,7 @@
 {
-  "name": "vite_vue3_empty_project",
+  "name": "ai-ppt-generator",
   "private": true,
-  "version": "0.0.1",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -33,5 +33,6 @@
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.1",
     "vite": "^6.0.5"
-  }
+  },
+  "description": "AI 对话 + PPT 生成工具：自然语言生成 PPT、文档解析、图表生成（Vue3 + Vite + DeepSeek）"
 }

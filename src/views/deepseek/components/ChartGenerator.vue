@@ -120,43 +120,53 @@
 import { UploadFilled } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { ref, onMounted, nextTick, computed } from 'vue';
-import * as echarts from 'echarts/core';
-import { BarChart, LineChart, PieChart, ScatterChart, RadarChart } from 'echarts/charts';
-import {
-  TitleComponent,
-  TooltipComponent,
-  GridComponent,
-  DatasetComponent,
-  TransformComponent,
-  LegendComponent,
-  ToolboxComponent,
-  VisualMapComponent
-} from 'echarts/components';
-import { LabelLayout, UniversalTransition } from 'echarts/features';
-import { CanvasRenderer } from 'echarts/renderers';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 import OpenAI from "openai";
 
-// 注册必需的组件
-echarts.use([
-  TitleComponent,
-  TooltipComponent,
-  GridComponent,
-  DatasetComponent,
-  TransformComponent,
-  LegendComponent,
-  ToolboxComponent,
-  VisualMapComponent,
-  LabelLayout,
-  UniversalTransition,
-  CanvasRenderer,
-  BarChart,
-  LineChart,
-  PieChart,
-  ScatterChart,
-  RadarChart
-]);
+// ECharts（打包后 1MB+）与 jsPDF（350KB+）改为按需加载：只有真正渲染 / 导出图表时才下载，
+// 不再拖累首屏体积。原先只被 import、从未使用的 html2canvas 已移除。
+let echartsCore = null;
+
+async function loadECharts() {
+  if (echartsCore) return echartsCore;
+
+  const echarts = await import('echarts/core');
+  const { BarChart, LineChart, PieChart, ScatterChart, RadarChart } = await import('echarts/charts');
+  const {
+    TitleComponent,
+    TooltipComponent,
+    GridComponent,
+    DatasetComponent,
+    TransformComponent,
+    LegendComponent,
+    ToolboxComponent,
+    VisualMapComponent
+  } = await import('echarts/components');
+  const { LabelLayout, UniversalTransition } = await import('echarts/features');
+  const { CanvasRenderer } = await import('echarts/renderers');
+
+  // 注册必需的组件
+  echarts.use([
+    TitleComponent,
+    TooltipComponent,
+    GridComponent,
+    DatasetComponent,
+    TransformComponent,
+    LegendComponent,
+    ToolboxComponent,
+    VisualMapComponent,
+    LabelLayout,
+    UniversalTransition,
+    CanvasRenderer,
+    BarChart,
+    LineChart,
+    PieChart,
+    ScatterChart,
+    RadarChart
+  ]);
+
+  echartsCore = echarts;
+  return echartsCore;
+}
 
 // 定义图表主题
 const chartThemes = {
@@ -503,7 +513,7 @@ export default {
         await nextTick();
         
         // 初始化图表
-        initChart(parsedData);
+        await initChart(parsedData);
         
       } catch (error) {
         console.error('图表生成失败:', error);
@@ -513,9 +523,14 @@ export default {
       }
     };
     
-    const initChart = (data) => {
+    const initChart = async (data) => {
       if (!chartRef.value) return;
-      
+
+      // 首次渲染图表时才下载 echarts
+      const echarts = await loadECharts();
+      // 等待期间组件可能已被卸载
+      if (!chartRef.value) return;
+
       // 如果已有图表实例，销毁它
       if (chartInstance) {
         chartInstance.dispose();
@@ -883,6 +898,9 @@ ${textData}`;
       exporting.value = true;
       
       try {
+        // 按需加载 jsPDF，避免打进首屏包
+        const { default: jsPDF } = await import('jspdf');
+
         // 创建PDF文档
         const pdf = new jsPDF({
           orientation: 'landscape',

@@ -28,7 +28,7 @@
 <script>
 import { ref, watch } from 'vue'
 import PPTTemplateSelector from './PPTTemplateSelector.vue'
-import pptxgen from 'pptxgenjs'
+// pptxgenjs 改为按需加载，避免打进首屏包
 import { ElMessage } from 'element-plus'
 
 export default {
@@ -143,6 +143,9 @@ export default {
       try {
         showTemplateSelector.value = false
         
+        // 按需加载 pptxgenjs（约 300KB+），只有真正生成时才下载
+        const { default: pptxgen } = await import('pptxgenjs')
+
         // 创建新的PPT实例
         const pres = new pptxgen()
         

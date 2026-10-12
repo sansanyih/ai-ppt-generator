@@ -111,13 +111,18 @@
 <script>
 import { UploadFilled } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
-import * as pdfjs from 'pdfjs-dist';
-import mammoth from 'mammoth';
-import * as XLSX from 'xlsx';
-import JSZip from 'jszip';
+// 以下重依赖（pdfjs-dist 1MB+ / mammoth / xlsx / jszip）全部改为按需加载：
+// 只有用户真的上传了对应格式的文件时才下载，避免打进首屏包。
+let pdfjsLib = null;
 
-// 设置worker路径 - 使用CDN路径而不是本地导入
-pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+async function loadPdfjs() {
+  if (!pdfjsLib) {
+    pdfjsLib = await import('pdfjs-dist');
+    // 设置worker路径 - 使用CDN路径而不是本地导入
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+  }
+  return pdfjsLib;
+}
 
 // 添加辅助函数 - 用于清理PDF提取的文本
 function cleanPdfText(text) {
@@ -326,6 +331,9 @@ export default {
               
               const typedArray = new Uint8Array(event.target.result);
               
+              // 按需加载 pdfjs-dist
+              const pdfjs = await loadPdfjs();
+
               // 加载PDF文档
               const loadingTask = pdfjs.getDocument({
                 data: typedArray,
@@ -476,7 +484,8 @@ export default {
               
               const arrayBuffer = e.target.result;
               
-              // 使用mammoth.js转换docx为HTML
+              // 按需加载 mammoth.js 解析 docx
+              const mammoth = (await import('mammoth')).default;
               const result = await mammoth.extractRawText({arrayBuffer});
               const text = result.value;
               const warnings = result.messages;
@@ -520,7 +529,8 @@ export default {
               
               const data = new Uint8Array(e.target.result);
               
-              // 使用XLSX库解析Excel文件
+              // 按需加载 XLSX 解析 Excel
+              const XLSX = await import('xlsx');
               const workbook = XLSX.read(data, { type: 'array' });
               
               // 提取所有工作表数据
@@ -572,7 +582,8 @@ export default {
               const arrayBuffer = e.target.result;
               let formattedText = `--- PowerPoint文件: ${file.name} ---\n\n`;
               
-              // 使用JSZip解压PPTX文件（PPTX本质上是ZIP文件）
+              // 按需加载 JSZip 解压 PPTX（PPTX 本质上是 ZIP）
+              const JSZip = (await import('jszip')).default;
               const zip = new JSZip();
               const pptx = await zip.loadAsync(arrayBuffer);
               this.pdfProgress = 30;

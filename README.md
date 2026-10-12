@@ -117,3 +117,20 @@ npm run dev
 - `public/config.js` 里的 `baseUrl` 指向本地 Node 服务（`127.0.0.1:3000`），该服务未包含在本仓库，因此依赖它的少数业务接口在线上不可用；大模型相关功能不受影响；
 - 工程骨架基于 MIT 许可的开源模板二次开发（原版权声明见 `LICENSE`），业务功能、界面与交互由本人实现与改造；
 - 待办：会话历史持久化、导出进度条、错误重试与超时兜底。
+
+## 性能优化：首屏体积
+
+重依赖（ECharts、pdfjs-dist、xlsx、pptxgenjs、jsPDF、JSZip）原先都是**静态 import**，会被打进「进入首页就要下载」的那个 chunk：
+
+| | 优化前 | 优化后 |
+| --- | --- | --- |
+| 首页路由 chunk | **4,126 KB** | **1,411 KB** |
+| 首屏 JS 合计（入口 + 首页路由） | ≈ 5.1 MB | ≈ 2.4 MB（**↓ 53%**） |
+
+做法：
+
+- `ChartGenerator` 的 ECharts / jsPDF、`ReadingAnalyzer` 的 pdfjs-dist / mammoth / xlsx / JSZip、`PPTGenerator` 与对话页的 pptxgenjs，全部改成**函数内 `await import()` 按需加载**，只有用户真正用到对应功能时才下载；
+- 顺带删掉 `ChartGenerator` 里**只 import、从未使用**的 `html2canvas`；
+- ECharts 的 `use([...])` 组件注册移进懒加载函数，保证注册先于 `init()` 执行。
+
+效果：首次打开只下载「入口 + 首页路由」两个 chunk，其余按需——文档解析 379 KB、表格解析 429 KB、PPT 生成 275 KB、PDF 导出 358 KB、图表 ~430 KB。

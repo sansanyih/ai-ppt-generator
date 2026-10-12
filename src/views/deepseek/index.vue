@@ -143,7 +143,7 @@ import { Promotion, DeleteFilled, BrushFilled } from "@element-plus/icons-vue";
 import { getTokens } from "@/api/modules/deepseek.js";
 import { ElMessage, ElMessageBox } from "element-plus";
 import MobileDetect from "mobile-detect";
-import pptxgen from "pptxgenjs";
+// pptxgenjs（打包后 300KB+）改为按需加载：只有真正生成 PPT 时才下载
 
 export default {
   components: { 
@@ -467,6 +467,9 @@ export default {
       try {
         this.showTemplateSelector = false;
         
+        // 按需加载 pptxgenjs，不点「生成 PPT」就不会下载这部分代码
+        const { default: pptxgen } = await import("pptxgenjs");
+
         // 创建新的PPT实例
         const pres = new pptxgen();
         

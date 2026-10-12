@@ -21,6 +21,11 @@ export default defineConfig(({ mode }) => {
         "@": path.resolve(__dirname, "src"), // 设置 @ 别名指向 src 目录
       },
     },
+    build: {
+      // 重依赖（echarts / pdfjs-dist / xlsx / pptxgenjs / jspdf）已改为按需加载，
+      // 首屏 chunk 明显变小，这里把告警阈值调到 900KB
+      chunkSizeWarningLimit: 900,
+    },
     server: {
       proxy: {
         // 浏览器只请求 /api/**，真实密钥由这里的 Node 进程补上，不会进浏览器
