@@ -1,0 +1,7 @@
+// 假设你的白框类名为 .content-box，根据实际类名修改
+.content-box {
+  width: 100%;
+  height: 100%;
+  overflow: auto; // 或 overflow: hidden; 根据需求选择
+  box-sizing: border-box;
+}
