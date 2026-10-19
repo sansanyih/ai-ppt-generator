@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="inner-html-container">
     <LoginComp v-if="!isLoggedIn" @login-success="handleLoginSuccess" />
     <div class="page" v-else>
@@ -844,5 +844,23 @@ export default {
   overflow-y: auto;
   padding: 0;
   height: 70vh;
+}
+
+/* ---------------- 视觉优化：容器 ---------------- */
+.wrap .container {
+  border-radius: 16px;
+  box-shadow: 0 14px 44px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+  border: 1px solid #eef1f5;
+}
+.wrap .input-area {
+  padding: 0 16px 16px 16px !important;
+}
+.wrap .input-area :deep(.el-input__wrapper) {
+  border-radius: 10px;
+  box-shadow: 0 0 0 1px #e5e9f0 inset;
+}
+.wrap .input-area :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 1px #409eff inset;
 }
 </style>
