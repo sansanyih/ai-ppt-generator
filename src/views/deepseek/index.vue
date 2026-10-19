@@ -105,7 +105,7 @@
             <el-button
                 style="height: 40px"
                 type="primary"
-                @click="handleRequest"
+                @click="handleRequest()"
                 :disabled="!queryKeys"
                 :loading="loading"
             >
@@ -347,7 +347,9 @@ export default {
       //   · 线上部署：api/[...path].js（Vercel Edge Function）转发
       // apiKey 只是 SDK 的必填占位值，真正的密钥在服务端环境变量里，不会出现在前端 bundle
       this.openai = new OpenAI({
-        baseURL: "/api",
+        // OpenAI SDK 内部会 new URL(baseURL)，必须是绝对地址；
+        // 这里用当前 origin 拼 /api，本地与线上都指向同源代理。
+        baseURL: window.location.origin + "/api",
         apiKey: "proxied-by-server",
         dangerouslyAllowBrowser: true,
       });
